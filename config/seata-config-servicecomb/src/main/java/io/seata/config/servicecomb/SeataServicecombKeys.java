@@ -19,7 +19,7 @@ package io.seata.config.servicecomb;
 import io.seata.common.ConfigurationKeys;
 
 /**
- * servicecomb properties configuration path
+ * servicecomb properties configuration
  *
  * @author zhaozhongwei22@163.com
  */
@@ -144,6 +144,12 @@ public interface SeataServicecombKeys {
     String KEY_RBAC_PASSWORD = REGISTRY_KEY_PREFIX + "credentials.account.password";
 
     String CONFIG_ALLOW_CROSS_APP_KEY = "allowCrossApp";
+
+    /**
+     * other constant
+     */
+    String APP_SERVICE_SEPRATOR = ".";
+
     /**
      * default value
      */

@@ -36,12 +36,6 @@ import java.util.Map;
  * @author zhaozhongwei22@163.com
  */
 public class AuthHeaderProviders {
-
-    public static RequestAuthHeaderProvider getRequestAuthHeaderProvider(Configuration properties) {
-        List<AuthHeaderProvider> authHeaderProviders = new ArrayList<>();
-        return getRequestAuthHeaderProvider(authHeaderProviders);
-    }
-
     public static HttpConfiguration.SSLProperties createSslProperties(Configuration properties) {
 
         HttpConfiguration.SSLProperties sslProperties = new HttpConfiguration.SSLProperties();
@@ -86,22 +80,4 @@ public class AuthHeaderProviders {
         return sslProperties;
     }
 
-    public static RequestAuthHeaderProvider getRequestAuthHeaderProvider(List<AuthHeaderProvider> authHeaderProviders) {
-        return signRequest -> {
-            Map<String, String> headers = new HashMap<>(0);
-            authHeaderProviders.forEach(authHeaderProvider -> headers.putAll(authHeaderProvider.authHeaders()));
-            return headers;
-        };
-    }
-
-    private static String safeGetProject(String project) {
-        if (StringUtils.isEmpty(project)) {
-            return project;
-        }
-        try {
-            return URLEncoder.encode(project, SeataServicecombKeys.UTF_8);
-        } catch (UnsupportedEncodingException e) {
-            return project;
-        }
-    }
 }

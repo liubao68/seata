@@ -26,10 +26,15 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import io.seata.config.Configuration;
+import io.seata.config.ConfigurationFactory;
 import io.seata.config.servicecomb.SeataServicecombKeys;
 import io.seata.config.servicecomb.client.EventManager;
+import io.seata.config.servicecomb.client.auth.AuthHeaderProviders;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.servicecomb.foundation.auth.AuthHeaderProvider;
+import org.apache.servicecomb.http.client.common.HttpConfiguration;
+import org.apache.servicecomb.service.center.client.AddressManager;
 import org.apache.servicecomb.service.center.client.OperationEvents;
 import org.apache.servicecomb.service.center.client.ServiceCenterClient;
 import org.apache.servicecomb.service.center.client.model.RbacTokenRequest;
@@ -38,6 +43,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Response.Status;
+
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,14 +79,13 @@ public class RBACRequestAuthHeaderProvider implements AuthHeaderProvider {
 
   private ServiceCenterClient client;
 
-  private Configuration properties;
+  private Configuration properties = ConfigurationFactory.CURRENT_FILE_INSTANCE;
 
-  public RBACRequestAuthHeaderProvider(ServiceCenterClient client, Configuration properties) {
-    this.client = client;
-    this.properties = properties;
-    EventManager.getEventBus().register(this);
+  public RBACRequestAuthHeaderProvider() {
+    EventManager.register(this);
 
     if (enabled()) {
+      client = createServiceCenterClient();
       executorService = new ThreadPoolExecutor(1, 1,
               0L, TimeUnit.MILLISECONDS,
               new LinkedBlockingQueue<Runnable>(),
@@ -100,6 +106,23 @@ public class RBACRequestAuthHeaderProvider implements AuthHeaderProvider {
             }
           });
     }
+  }
+
+
+  private ServiceCenterClient createServiceCenterClient() {
+    AddressManager addressManager = createAddressManager();
+    HttpConfiguration.SSLProperties sslProperties =
+        AuthHeaderProviders.createSslProperties(properties);
+    return new ServiceCenterClient(addressManager, sslProperties, signRequest -> Collections.emptyMap()
+        , SeataServicecombKeys.DEFAULT, null);
+  }
+
+  private AddressManager createAddressManager() {
+    String address =
+        properties.getConfig(SeataServicecombKeys.KEY_REGISTRY_ADDRESS, SeataServicecombKeys.DEFAULT_REGISTRY_URL);
+    String project = properties.getConfig(SeataServicecombKeys.KEY_SERVICE_PROJECT, SeataServicecombKeys.DEFAULT);
+    LOGGER.info("Using service center, address={}.", address);
+    return new AddressManager(project, Arrays.asList(address.split(SeataServicecombKeys.COMMA)));
   }
 
   @Subscribe

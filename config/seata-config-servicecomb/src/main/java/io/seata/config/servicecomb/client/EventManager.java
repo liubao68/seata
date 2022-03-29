@@ -18,42 +18,13 @@ package io.seata.config.servicecomb.client;
 
 import com.google.common.eventbus.EventBus;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * on seata server side,create new EventBus instance,on client size,use the existing EventBus
+ * Event manager to post/register events.
+ *
  * @author zhaozhongwei22@163.com
  */
 public class EventManager {
-    private static final String HUAWEI_CLOUD_EVENT_MANAGER = "com.huaweicloud.common.event.EventManager";
-    private static final String DUBBO_EVENT_MANAGER = "com.huaweicloud.dubbo.common.EventManager";
-    private static final String SERVICECOMB_EVENT_MANAGER =
-        "org.apache.servicecomb.foundation.common.event.EventManager";
-    private static final String EVENT_BUS = "eventBus";
-    private static EventBus eventBus;
-    private static List<String> eventBusNames = new ArrayList<>();
-
-    static {
-        eventBusNames.add(HUAWEI_CLOUD_EVENT_MANAGER);
-        eventBusNames.add(DUBBO_EVENT_MANAGER);
-        eventBusNames.add(SERVICECOMB_EVENT_MANAGER);
-        for (String className : eventBusNames) {
-            try {
-                Class<?> huaweiEventManagerClazz = Class.forName(className);
-                Field busField = huaweiEventManagerClazz.getDeclaredField(EVENT_BUS);
-                busField.setAccessible(true);
-                eventBus = (EventBus)busField.get(null);
-                break;
-            } catch (Exception e) {
-                // ignore
-            }
-        }
-        if (eventBus == null) {
-            eventBus = new EventBus();
-        }
-    }
+    private static EventBus eventBus = new EventBus();
 
     public static EventBus getEventBus() {
         return eventBus;

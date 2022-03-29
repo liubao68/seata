@@ -16,6 +16,7 @@
 
 package io.seata.config.servicecomb.client;
 
+import io.seata.common.loader.EnhancedServiceLoader;
 import io.seata.config.Configuration;
 import io.seata.config.servicecomb.SeataServicecombKeys;
 import io.seata.config.servicecomb.client.auth.AuthHeaderProviders;
@@ -31,12 +32,16 @@ import org.apache.servicecomb.config.kie.client.KieClient;
 import org.apache.servicecomb.config.kie.client.KieConfigManager;
 import org.apache.servicecomb.config.kie.client.model.KieAddressManager;
 import org.apache.servicecomb.config.kie.client.model.KieConfiguration;
+import org.apache.servicecomb.foundation.auth.AuthHeaderProvider;
+import org.apache.servicecomb.http.client.auth.RequestAuthHeaderProvider;
 import org.apache.servicecomb.http.client.common.HttpTransport;
 import org.apache.servicecomb.http.client.common.HttpTransportFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -95,13 +100,22 @@ public class ServicecombConfigurationHelper {
         this.setTimeOut(config);
 
         httpTransport = HttpTransportFactory.createHttpTransport(AuthHeaderProviders.createSslProperties(properties),
-            AuthHeaderProviders.getRequestAuthHeaderProvider(properties), config.build());
+            getRequestAuthHeaderProvider(), config.build());
 
         if (isKie) {
             configKieClient(properties);
         } else {
             configCenterClient(properties);
         }
+    }
+
+    private static RequestAuthHeaderProvider getRequestAuthHeaderProvider() {
+        List<AuthHeaderProvider> authHeaderProviders = EnhancedServiceLoader.loadAll(AuthHeaderProvider.class);
+        return signRequest -> {
+            Map<String, String> headers = new HashMap<>();
+            authHeaderProviders.forEach(provider -> headers.putAll(provider.authHeaders()));
+            return headers;
+        };
     }
 
     private void configCenterClient(Configuration properties) {
